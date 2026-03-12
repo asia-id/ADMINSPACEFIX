@@ -338,6 +338,30 @@
     .pm-select-gold { border-color: rgba(212,168,83,0.3); color: var(--gold); }
     .pm-save-gold { background: linear-gradient(135deg,#92400e,#d4a853); color: #fff; }
     .pm-save-gold:hover { background: linear-gradient(135deg,#a16207,#e5b95e); }
+
+    /* ══ BALASAN ADMIN ══ */
+    .d-balasan-row { margin-top: 4px; }
+    .balasan-input {
+      width: 100%; background: var(--bg3);
+      border: 1px solid var(--border2); border-radius: 9px;
+      color: var(--text); font-family: 'DM Sans', sans-serif;
+      font-size: 13px; padding: 10px 13px; resize: vertical;
+      outline: none; line-height: 1.6; transition: border-color .18s;
+      margin-top: 4px;
+    }
+    .balasan-input:focus { border-color: var(--gold); }
+    .balasan-input::placeholder { color: var(--text3); }
+    .d-balasan-meta {
+      font-size: 11px; color: var(--text3); margin: 4px 0 12px;
+      min-height: 16px;
+    }
+    /* table row has-reply indicator */
+    .has-reply-dot {
+      display: inline-block; width: 7px; height: 7px;
+      border-radius: 50%; background: var(--gold);
+      margin-right: 5px; vertical-align: middle;
+      box-shadow: 0 0 5px rgba(212,168,83,0.5);
+    }
   </style>
 </head>
 <body>
@@ -587,7 +611,12 @@
         <option value="Selesai">Selesai</option>
       </select>
     </div>
-    <button class="save-status-btn" onclick="saveStatus()">Simpan Perubahan</button>
+    <div class="d-row d-balasan-row">
+      <div class="d-lbl">💬 Balasan Admin</div>
+      <textarea class="balasan-input" id="d-balasan" rows="3" placeholder="Tulis balasan untuk pengguna... (akan tampil di halaman Cek Laporan)"></textarea>
+    </div>
+    <div class="d-balasan-meta" id="d-balasan-meta"></div>
+    <button class="save-status-btn" onclick="saveStatus()">💾 Simpan &amp; Kirim Balasan</button>
   </div>
 </div>
 
@@ -757,7 +786,7 @@
         const key     = r.fbKey;
         return `<tr>
           <td style="color:var(--text3);font-size:12px">${no}</td>
-          <td class="td-name">${esc(r.nama)}</td>
+          <td class="td-name">${r.balasan ? '<span class="has-reply-dot" title="Ada balasan admin"></span>' : ''}${esc(r.nama)}</td>
           <td class="td-kontak">${esc(r.kontak)}</td>
           <td><span class="alasan-badge ${alClass}">${esc(r.alasan)}</span></td>
           <td class="td-detail">${det}</td>
@@ -797,6 +826,13 @@
     document.getElementById('d-detail').textContent = r.detail || '(tidak ada keterangan)';
     document.getElementById('d-waktu').textContent  = r.waktu;
     document.getElementById('d-status').value       = r.status || 'Baru';
+    document.getElementById('d-balasan').value      = r.balasan || '';
+    const meta = document.getElementById('d-balasan-meta');
+    if (r.balasan && r.waktuBalasan) {
+      meta.innerHTML = '&#128338; Terakhir dibalas: ' + r.waktuBalasan;
+    } else {
+      meta.textContent = r.balasan ? '' : 'Belum ada balasan.';
+    }
     document.getElementById('detailOverlay').classList.add('open');
   };
   window.closeDetail = function() {
@@ -808,14 +844,24 @@
   };
   window.saveStatus = async function() {
     if (!currentFbKey) return;
-    const newStatus = document.getElementById('d-status').value;
+    const newStatus  = document.getElementById('d-status').value;
+    const balasanTxt = document.getElementById('d-balasan').value.trim();
+    const updateData = { status: newStatus };
+    if (balasanTxt) {
+      updateData.balasan = balasanTxt;
+      const now = new Date();
+      updateData.waktuBalasan = now.toLocaleString('id-ID', {
+        timeZone: 'Asia/Jakarta', day:'2-digit', month:'short',
+        year:'numeric', hour:'2-digit', minute:'2-digit'
+      }) + ' WIB';
+    }
     try {
-      await update(ref(db, 'laporan/' + currentFbKey), { status: newStatus });
+      await update(ref(db, 'laporan/' + currentFbKey), updateData);
       window.closeDetail();
-      showToast('✅ Status berhasil diperbarui');
+      showToast(balasanTxt ? '✅ Status & balasan berhasil disimpan' : '✅ Status berhasil diperbarui');
     } catch(err) {
       console.error(err);
-      showToast('⚠️ Gagal memperbarui status.');
+      showToast('⚠️ Gagal menyimpan.');
     }
   };
 
