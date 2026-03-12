@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin — Panel Laporan</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:      #0a0a0a;
+      --bg2:     #111111;
+      --bg3:     #1a1a1a;
+      --bg4:     #222222;
+      --border:  #2a2a2a;
+      --border2: #333333;
+      --text:    #f0f0f0;
+      --text2:   #a0a0a0;
+      --text3:   #555555;
+      --white:   #ffffff;
+      --gold:    #d4a853;
+      --green:   #4ade80;
+      --red:     #f87171;
+      --yellow:  #fbbf24;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.012'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+
+    /* ── Login Screen ── */
+    #loginScreen {
+      position: fixed; inset: 0; z-index: 999;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg); padding: 20px;
+    }
+    .login-box {
+      background: var(--bg2); border: 1px solid var(--border2);
+      border-radius: 18px; padding: 36px 32px; width: 100%; max-width: 360px;
+      text-align: center; box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+    }
+    .login-icon { font-size: 40px; margin-bottom: 14px; }
+    .login-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px; color: var(--white); margin-bottom: 6px;
+    }
+    .login-sub { font-size: 13px; color: var(--text3); margin-bottom: 26px; }
+    .login-input {
+      width: 100%; background: var(--bg3); border: 1px solid var(--border2);
+      color: var(--text); padding: 12px 14px; border-radius: 9px;
+      font-family: 'DM Sans', sans-serif; font-size: 14px;
+      outline: none; transition: border-color .18s; margin-bottom: 12px;
+    }
+    .login-input:focus { border-color: #444; }
+    .login-btn {
+      width: 100%; padding: 13px; background: var(--white); color: var(--bg);
+      border: none; border-radius: 9px; font-family: 'DM Sans', sans-serif;
+      font-size: 14px; font-weight: 700; cursor: pointer; transition: all .18s;
+    }
+    .login-btn:hover { background: #e8e8e8; }
+    .login-err { font-size: 12px; color: var(--red); margin-top: 8px; display: none; }
+
+    /* ── Main ── */
+    #mainPanel { display: none; position: relative; z-index: 1; min-height: 100vh; }
+
+    /* ── Topbar ── */
+    .topbar {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px; height: 60px;
+      background: rgba(10,10,10,0.92); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .top-logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 18px; color: var(--white);
+    }
+    .top-logo span { color: var(--gold); }
+    .top-right { display: flex; align-items: center; gap: 12px; }
+    .admin-chip {
+      font-size: 11px; font-weight: 600; color: var(--text3);
+      background: var(--bg3); border: 1px solid var(--border);
+      padding: 4px 10px; border-radius: 6px;
+    }
+    .logout-btn {
+      background: var(--bg3); border: 1px solid var(--border2);
+      color: var(--text2); padding: 7px 14px; border-radius: 8px;
+      cursor: pointer; font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 500; transition: all .18s;
+    }
+    .logout-btn:hover { color: var(--text); border-color: #444; }
+
+    /* ── Content ── */
+    .content { max-width: 900px; margin: 0 auto; padding: 36px 20px 60px; }
+
+    /* ── Stats Bar ── */
+    .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 32px; }
+    .stat-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 18px 20px;
+    }
+    .stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+    .stat-val { font-size: 26px; font-weight: 700; color: var(--white); }
+    .stat-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+    /* ── Toolbar ── */
+    .toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; margin-bottom: 18px; flex-wrap: wrap;
+    }
+    .search-wrap { position: relative; flex: 1; min-width: 200px; }
+    .search-input {
+      width: 100%; background: var(--bg2); border: 1px solid var(--border);
+      color: var(--text); padding: 10px 14px 10px 36px; border-radius: 9px;
+      font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none;
+      transition: border-color .18s;
+    }
+    .search-input:focus { border-color: var(--border2); }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 14px; }
+    .filter-select {
+      background: var(--bg2); border: 1px solid var(--border);
+      color: var(--text2); padding: 10px 14px; border-radius: 9px;
+      font-family: 'DM Sans', sans-serif; font-size: 13px; outline: none;
+      cursor: pointer;
+    }
+    .filter-select option { background: var(--bg3); }
+    .clear-btn {
+      background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.25);
+      color: var(--red); padding: 10px 16px; border-radius: 9px;
+      cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 13px;
+      font-weight: 500; transition: all .18s; white-space: nowrap;
+    }
+    .clear-btn:hover { background: rgba(248,113,113,0.18); }
+
+    /* ── Table ── */
+    .table-wrap {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { border-bottom: 1px solid var(--border); }
+    thead th {
+      padding: 13px 16px; text-align: left;
+      font-size: 11px; font-weight: 600; color: var(--text3);
+      text-transform: uppercase; letter-spacing: 0.8px; white-space: nowrap;
+    }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background .15s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--bg3); }
+    td {
+      padding: 14px 16px; font-size: 13px; color: var(--text2);
+      vertical-align: top;
+    }
+    .td-name { color: var(--white); font-weight: 500; }
+    .td-kontak { color: var(--text); }
+    .td-detail { color: var(--text3); font-size: 12px; max-width: 180px; line-height: 1.5; }
+
+    .alasan-badge {
+      display: inline-block; font-size: 11px; font-weight: 600;
+      padding: 3px 10px; border-radius: 20px; white-space: nowrap;
+    }
+    .a-penipuan    { background: rgba(248,113,113,0.12); color: var(--red);    border: 1px solid rgba(248,113,113,0.25); }
+    .a-tidak-sesuai{ background: rgba(251,191,36,0.1);  color: var(--yellow); border: 1px solid rgba(251,191,36,0.2); }
+    .a-hak-cipta   { background: rgba(212,168,83,0.1);  color: var(--gold);   border: 1px solid rgba(212,168,83,0.2); }
+    .a-berbahaya   { background: rgba(248,113,113,0.12); color: var(--red);    border: 1px solid rgba(248,113,113,0.25); }
+    .a-lainnya     { background: rgba(255,255,255,0.05); color: var(--text2);  border: 1px solid var(--border2); }
+
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px;
+    }
+    .s-baru    { background: rgba(74,222,128,0.1);  color: var(--green); border: 1px solid rgba(74,222,128,0.2); }
+    .s-proses  { background: rgba(251,191,36,0.1);  color: var(--yellow);border: 1px solid rgba(251,191,36,0.2); }
+    .s-selesai { background: rgba(255,255,255,0.05);color: var(--text3); border: 1px solid var(--border2); }
+
+    .action-btn {
+      background: none; border: 1px solid var(--border);
+      color: var(--text3); padding: 5px 10px; border-radius: 6px;
+      cursor: pointer; font-size: 11px; font-weight: 500;
+      font-family: 'DM Sans', sans-serif; transition: all .18s; margin-right: 4px;
+    }
+    .action-btn:hover { color: var(--text); border-color: var(--border2); background: var(--bg3); }
+    .action-del { color: var(--red); border-color: rgba(248,113,113,0.2); }
+    .action-del:hover { background: rgba(248,113,113,0.08); border-color: rgba(248,113,113,0.3); }
+
+    /* ── Empty State ── */
+    .empty-state {
+      text-align: center; padding: 60px 20px;
+    }
+    .empty-icon { font-size: 48px; margin-bottom: 14px; }
+    .empty-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+    .empty-sub { font-size: 13px; color: var(--text3); }
+
+    /* ── Detail Modal ── */
+    .detail-overlay {
+      display: none; position: fixed; inset: 0; z-index: 500;
+      background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .detail-overlay.open { display: flex; }
+    .detail-box {
+      background: var(--bg2); border: 1px solid var(--border2);
+      border-radius: 16px; width: 100%; max-width: 440px; padding: 28px;
+      position: relative; box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+      animation: popIn .2s ease;
+    }
+    @keyframes popIn { from{opacity:0;transform:scale(.94)} to{opacity:1;transform:scale(1)} }
+    .detail-close {
+      position: absolute; top: 14px; right: 14px;
+      background: var(--bg3); border: 1px solid var(--border);
+      color: var(--text2); width: 28px; height: 28px; border-radius: 7px;
+      cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center;
+    }
+    .detail-title { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--white); margin-bottom: 18px; }
+    .d-row { margin-bottom: 12px; }
+    .d-lbl { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 3px; }
+    .d-val { font-size: 14px; color: var(--text); }
+    .status-select {
+      width: 100%; background: var(--bg3); border: 1px solid var(--border2);
+      color: var(--text); padding: 10px 12px; border-radius: 8px;
+      font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none;
+      margin-top: 4px; cursor: pointer;
+    }
+    .save-status-btn {
+      width: 100%; padding: 12px; background: var(--white); color: var(--bg);
+      border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif;
+      font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 14px;
+      transition: background .18s;
+    }
+    .save-status-btn:hover { background: #e8e8e8; }
+
+    /* ── Pagination ── */
+    .pagination { display: flex; gap: 6px; justify-content: center; margin-top: 20px; }
+    .pg-btn {
+      width: 34px; height: 34px; border-radius: 8px;
+      background: var(--bg2); border: 1px solid var(--border);
+      color: var(--text2); cursor: pointer; font-size: 13px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'DM Sans', sans-serif; transition: all .18s;
+    }
+    .pg-btn:hover, .pg-btn.active { background: var(--bg3); color: var(--text); border-color: var(--border2); }
+    .pg-btn.active { font-weight: 700; color: var(--white); }
+
+    /* ── Toast ── */
+    .toast {
+      display: none; position: fixed; bottom: 28px; left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg3); border: 1px solid var(--border2);
+      color: var(--text); padding: 11px 22px; border-radius: 50px;
+      font-size: 13px; font-weight: 500; z-index: 9999;
+      white-space: nowrap; box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+    }
+
+    @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+    .fi { animation: fadeIn .4s ease both; }
+
+    @media(max-width:640px) {
+      .stats-bar { grid-template-columns: 1fr 1fr; }
+      thead th:nth-child(5), td:nth-child(5) { display: none; }
+    }
+
+    /* ══ ADMIN TABS ══ */
+    .admin-tab {
+      padding: 9px 20px; border-radius: 9px; border: 1px solid var(--border);
+      background: var(--bg2); color: var(--text2);
+      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+      cursor: pointer; transition: all .18s;
+    }
+    .admin-tab:hover { color: var(--text); border-color: var(--border2); }
+    .admin-tab.active { background: var(--white); color: var(--bg); border-color: var(--white); font-weight: 700; }
+
+    /* ══ PRODUCT MANAGEMENT ══ */
+    .prod-mgmt-header { margin-bottom: 22px; }
+    .pm-title { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--white); margin-bottom: 4px; }
+    .pm-sub   { font-size: 13px; color: var(--text3); }
+
+    .pm-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 14px; padding: 18px 20px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      margin-bottom: 2px; transition: border-color .18s;
+    }
+    .pm-card:hover { border-color: var(--border2); }
+    .pm-card-left { flex: 1; }
+    .pm-prod-name { font-size: 15px; font-weight: 600; color: var(--white); margin-bottom: 2px; }
+    .pm-prod-sub  { font-size: 12px; color: var(--text3); margin-bottom: 6px; }
+    .pm-status-label {
+      display: inline-block; font-size: 11px; font-weight: 700;
+      padding: 3px 10px; border-radius: 20px;
+    }
+    .pm-lbl-tersedia   { background: rgba(74,222,128,0.1); color: var(--green); border: 1px solid rgba(74,222,128,0.2); }
+    .pm-lbl-habis      { background: rgba(248,113,113,0.1); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
+    .pm-lbl-maintenance{ background: rgba(251,191,36,0.1); color: #fbbf24; border: 1px solid rgba(251,191,36,0.2); }
+
+    .pm-select {
+      background: var(--bg3); border: 1px solid var(--border2);
+      color: var(--text); padding: 9px 14px; border-radius: 9px;
+      font-family: 'DM Sans', sans-serif; font-size: 13px; outline: none;
+      cursor: pointer; min-width: 170px;
+    }
+    .pm-select option { background: var(--bg3); }
+
+    .pm-catatan-wrap {
+      display: flex; gap: 8px; align-items: center;
+      background: var(--bg3); border: 1px solid var(--border);
+      border-top: none; border-radius: 0 0 12px 12px;
+      padding: 10px 16px; margin-bottom: 14px;
+    }
+    .pm-catatan-input {
+      flex: 1; background: transparent; border: none;
+      color: var(--text2); font-family: 'DM Sans', sans-serif;
+      font-size: 13px; outline: none;
+    }
+    .pm-catatan-input::placeholder { color: var(--text3); }
+    .pm-save-btn {
+      background: var(--white); color: var(--bg); border: none;
+      padding: 7px 16px; border-radius: 7px;
+      font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: background .18s; white-space: nowrap;
+    }
+    .pm-save-btn:hover { background: #e8e8e8; }
+
+    .pm-info-box {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 16px;
+      font-size: 12px; color: var(--text3); line-height: 1.6;
+      margin-top: 4px;
+    }
+
+    .pm-card-special { border-color: rgba(212,168,83,0.25); }
+    .pm-select-gold { border-color: rgba(212,168,83,0.3); color: var(--gold); }
+    .pm-save-gold { background: linear-gradient(135deg,#92400e,#d4a853); color: #fff; }
+    .pm-save-gold:hover { background: linear-gradient(135deg,#a16207,#e5b95e); }
+  </style>
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-icon">🔐</div>
+    <div class="login-title">Admin Panel</div>
+    <div class="login-sub">Masuk untuk melihat laporan masuk</div>
+    <input class="login-input" id="loginPass" type="password" placeholder="Password admin" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="login-btn" onclick="doLogin()">Masuk</button>
+    <div class="login-err" id="loginErr">Password salah. Coba lagi.</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:14px;">Default: <code style="color:var(--text2)">admin123</code></div>
+  </div>
+</div>
+
+<!-- ═══ MAIN PANEL ═══ -->
+<div id="mainPanel">
+  <div class="topbar">
+    <div class="top-logo">Space<span>Store</span> — Admin</div>
+    <div class="top-right">
+      <span class="admin-chip">ADMIN</span>
+      <span class="fb-status" id="fbStatus" style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px;">
+        <span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;box-shadow:0 0 6px var(--green)"></span>Firebase Live
+      </span>
+      <button class="logout-btn" onclick="doLogout()">Keluar</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Tab Nav -->
+    <div class="admin-tabs fi" style="display:flex;gap:6px;margin-bottom:28px;">
+      <button class="admin-tab active" id="tabLaporan" onclick="switchAdminTab('laporan',this)">📋 Laporan Masuk</button>
+      <button class="admin-tab" id="tabProduk" onclick="switchAdminTab('produk',this)">🛍 Kelola Produk</button>
+    </div>
+
+    <!-- ══ PANEL: LAPORAN ══ -->
+    <div id="panelLaporan">
+
+    <!-- Stats -->
+    <div class="stats-bar fi">
+      <div class="stat-card">
+        <div class="stat-label">Total Laporan</div>
+        <div class="stat-val" id="statTotal">0</div>
+        <div class="stat-sub">semua waktu</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Laporan Baru</div>
+        <div class="stat-val" id="statBaru" style="color:var(--green)">0</div>
+        <div class="stat-sub">belum ditinjau</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Diproses</div>
+        <div class="stat-val" id="statProses" style="color:var(--yellow)">0</div>
+        <div class="stat-sub">sedang ditangani</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Selesai</div>
+        <div class="stat-val" id="statSelesai" style="color:var(--text3)">0</div>
+        <div class="stat-sub">sudah ditutup</div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar fi">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="search-input" id="searchInput" type="text" placeholder="Cari nama, kontak, atau alasan..." oninput="renderTable()"/>
+      </div>
+      <select class="filter-select" id="filterAlasan" onchange="renderTable()">
+        <option value="">Semua Alasan</option>
+        <option value="Produk tidak sesuai">Produk tidak sesuai</option>
+        <option value="Penipuan / Scam">Penipuan / Scam</option>
+        <option value="Pelanggaran hak cipta">Pelanggaran hak cipta</option>
+        <option value="Konten berbahaya">Konten berbahaya</option>
+        <option value="Lainnya">Lainnya</option>
+      </select>
+      <select class="filter-select" id="filterStatus" onchange="renderTable()">
+        <option value="">Semua Status</option>
+        <option value="Baru">Baru</option>
+        <option value="Diproses">Diproses</option>
+        <option value="Selesai">Selesai</option>
+      </select>
+      <button class="clear-btn" onclick="clearAll()">🗑 Hapus Semua</button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap fi">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nama</th>
+            <th>Kontak</th>
+            <th>Alasan</th>
+            <th>Keterangan</th>
+            <th>Waktu</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+      <div id="emptyState" class="empty-state hidden">
+        <div class="empty-icon">📭</div>
+        <div class="empty-title">Belum ada laporan</div>
+        <div class="empty-sub">Laporan dari pengguna akan muncul di sini</div>
+      </div>
+    </div>
+
+    <div class="pagination" id="pagination"></div>
+
+    </div><!-- /panelLaporan -->
+
+    <!-- ══ PANEL: PRODUK ══ -->
+    <div id="panelProduk" style="display:none;">
+      <div class="prod-mgmt-header fi">
+        <div class="pm-title">🛍 Kelola Status Produk</div>
+        <div class="pm-sub">Ubah status produk secara real-time. Perubahan langsung terlihat di halaman toko.</div>
+      </div>
+
+      <!-- APK -->
+      <div class="pm-card fi fi-1">
+        <div class="pm-card-left">
+          <div class="pm-prod-name">Spaceman Predictor Apk</div>
+          <div class="pm-prod-sub">Rp100.000 / lisensi</div>
+          <div class="pm-status-label" id="pm-lbl-apk">Memuat...</div>
+        </div>
+        <div class="pm-card-right">
+          <select class="pm-select" id="pm-sel-apk" onchange="window.updateProdukStatus('apk')">
+            <option value="tersedia">&#x2705; Tersedia</option>
+            <option value="habis">&#x274C; Stok Habis</option>
+            <option value="maintenance">&#x2699; Maintenance</option>
+          </select>
+        </div>
+      </div>
+      <div class="pm-catatan-wrap">
+        <input class="pm-catatan-input" id="pm-note-apk" type="text" placeholder="Catatan untuk user (opsional, tampil di toko)"/>
+        <button class="pm-save-btn" onclick="window.updateProdukStatus('apk')">Simpan</button>
+      </div>
+
+      <!-- Telegram -->
+      <div class="pm-card fi fi-2">
+        <div class="pm-card-left">
+          <div class="pm-prod-name">Spaceman Predictor Telegram</div>
+          <div class="pm-prod-sub">Rp50.000 / bulan &#x2022; Bundling Only</div>
+          <div class="pm-status-label" id="pm-lbl-telegram">Memuat...</div>
+        </div>
+        <div class="pm-card-right">
+          <select class="pm-select" id="pm-sel-telegram" onchange="window.updateProdukStatus('telegram')">
+            <option value="tersedia">&#x2705; Tersedia</option>
+            <option value="habis">&#x274C; Stok Habis</option>
+            <option value="maintenance">&#x2699; Maintenance</option>
+          </select>
+        </div>
+      </div>
+      <div class="pm-catatan-wrap">
+        <input class="pm-catatan-input" id="pm-note-telegram" type="text" placeholder="Catatan untuk user (opsional, tampil di toko)"/>
+        <button class="pm-save-btn" onclick="window.updateProdukStatus('telegram')">Simpan</button>
+      </div>
+
+      <!-- Bundling -->
+      <div class="pm-card fi fi-3">
+        <div class="pm-card-left">
+          <div class="pm-prod-name">Paket Bundling APK + Telegram</div>
+          <div class="pm-prod-sub">Rp130.000 / paket</div>
+          <div class="pm-status-label" id="pm-lbl-bundling">Memuat...</div>
+        </div>
+        <div class="pm-card-right">
+          <select class="pm-select" id="pm-sel-bundling" onchange="window.updateProdukStatus('bundling')">
+            <option value="tersedia">&#x2705; Tersedia</option>
+            <option value="habis">&#x274C; Stok Habis</option>
+            <option value="maintenance">&#x2699; Maintenance</option>
+          </select>
+        </div>
+      </div>
+      <div class="pm-catatan-wrap">
+        <input class="pm-catatan-input" id="pm-note-bundling" type="text" placeholder="Catatan untuk user (opsional, tampil di toko)"/>
+        <button class="pm-save-btn" onclick="window.updateProdukStatus('bundling')">Simpan</button>
+      </div>
+
+      <!-- Panel Predictor -->
+      <div class="pm-card fi fi-4">
+        <div class="pm-card-left">
+          <div class="pm-prod-name">Panel Predictor Spaceman</div>
+          <div class="pm-prod-sub">Rp500.000 / lisensi &bull; All Website &bull; Floating Widget</div>
+          <div class="pm-status-label" id="pm-lbl-panel">Memuat...</div>
+        </div>
+        <div class="pm-card-right">
+          <select class="pm-select" id="pm-sel-panel" onchange="window.updateProdukStatus('panel')">
+            <option value="tersedia">&#x2705; Tersedia</option>
+            <option value="habis">&#x274C; Stok Habis</option>
+            <option value="maintenance">&#x2699; Maintenance</option>
+          </select>
+        </div>
+      </div>
+      <div class="pm-catatan-wrap">
+        <input class="pm-catatan-input" id="pm-note-panel" type="text" placeholder="Catatan untuk user (opsional, tampil di toko)"/>
+        <button class="pm-save-btn" onclick="window.updateProdukStatus('panel')">Simpan</button>
+      </div>
+
+      <!-- Produk Spesial Reseller -->
+      <div class="pm-card pm-card-special fi">
+        <div class="pm-card-left">
+          <div class="pm-prod-name" style="display:flex;align-items:center;gap:6px;">
+            Produk Spesial <span style="font-size:10px;padding:2px 7px;border-radius:4px;background:rgba(212,168,83,0.12);color:#d4a853;border:1px solid rgba(212,168,83,0.25);">RESELLER</span>
+          </div>
+          <div class="pm-prod-sub">Rp700.000 / paket &bull; Semua Produk + Tutorial + Hak Jual</div>
+          <div class="pm-status-label" id="pm-lbl-spesial">Memuat...</div>
+        </div>
+        <div class="pm-card-right">
+          <select class="pm-select pm-select-gold" id="pm-sel-spesial" onchange="window.updateProdukStatus('spesial')">
+            <option value="tersedia">&#x2705; Tersedia</option>
+            <option value="habis">&#x274C; Stok Habis</option>
+            <option value="maintenance">&#x2699; Maintenance</option>
+          </select>
+        </div>
+      </div>
+      <div class="pm-catatan-wrap">
+        <input class="pm-catatan-input" id="pm-note-spesial" type="text" placeholder="Catatan untuk user (opsional, tampil di toko)"/>
+        <button class="pm-save-btn pm-save-gold" onclick="window.updateProdukStatus('spesial')">Simpan</button>
+      </div>
+
+      <div class="pm-info-box fi">&#x2139;&#xFE0F; Perubahan status langsung tersimpan ke Firebase dan tampil real-time di halaman toko pengguna.</div>
+    </div><!-- /panelProduk -->
+
+  </div><!-- /content -->
+</div><!-- /mainPanel -->
+
+<!-- ═══ DETAIL MODAL ═══ -->
+<div class="detail-overlay" id="detailOverlay" onclick="handleDetailOverlay(event)">
+  <div class="detail-box" id="detailBox">
+    <button class="detail-close" onclick="closeDetail()">✕</button>
+    <div class="detail-title">Detail Laporan</div>
+    <div class="d-row"><div class="d-lbl">ID</div><div class="d-val" id="d-id">—</div></div>
+    <div class="d-row"><div class="d-lbl">Nama</div><div class="d-val" id="d-nama">—</div></div>
+    <div class="d-row"><div class="d-lbl">Kontak</div><div class="d-val" id="d-kontak">—</div></div>
+    <div class="d-row"><div class="d-lbl">Alasan</div><div class="d-val" id="d-alasan">—</div></div>
+    <div class="d-row"><div class="d-lbl">Keterangan</div><div class="d-val" id="d-detail">—</div></div>
+    <div class="d-row"><div class="d-lbl">Waktu</div><div class="d-val" id="d-waktu">—</div></div>
+    <div class="d-row">
+      <div class="d-lbl">Update Status</div>
+      <select class="status-select" id="d-status">
+        <option value="Baru">Baru</option>
+        <option value="Diproses">Diproses</option>
+        <option value="Selesai">Selesai</option>
+      </select>
+    </div>
+    <button class="save-status-btn" onclick="saveStatus()">Simpan Perubahan</button>
+  </div>
+</div>
+
+<div class="toast" id="adToast"></div>
+
+<script type="module">
+  import { initializeApp }                                        from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getDatabase, ref, onValue, update, remove, push, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  /* ── Firebase Init ── */
+  const firebaseConfig = {
+    apiKey:            "AIzaSyCkLgYUCO_Q5dryeGR8Xtc8VSA04W_bH34",
+    authDomain:        "web-login-383a4.firebaseapp.com",
+    databaseURL:       "https://web-login-383a4-default-rtdb.firebaseio.com",
+    projectId:         "web-login-383a4",
+    storageBucket:     "web-login-383a4.firebasestorage.app",
+    messagingSenderId: "43262683349",
+    appId:             "1:43262683349:web:58c4044ff3c96cd10e9a5c",
+    measurementId:     "G-K7YH1FXENN"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+
+  const PASS     = 'admin123';
+  const PER_PAGE = 8;
+  let currentPage  = 1;
+  let currentFbKey = null;   // Firebase key of selected record
+  let allData      = [];     // [{fbKey, ...fields}]
+  let unsubscribe  = null;
+
+  /* ══ ADMIN TAB SWITCH ══ */
+  window.switchAdminTab = function(tab, el) {
+    document.querySelectorAll('.admin-tab').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('panelLaporan').style.display = tab === 'laporan' ? '' : 'none';
+    document.getElementById('panelProduk').style.display  = tab === 'produk'  ? '' : 'none';
+    if (tab === 'produk') loadProdukStatus();
+  };
+
+  /* ══ PRODUCT STATUS ══ */
+  function loadProdukStatus() {
+    onValue(ref(db, 'produk_status'), snap => {
+      const s = snap.exists() ? snap.val() : {};
+      ['apk', 'telegram', 'bundling', 'panel', 'spesial'].forEach(id => {
+        const cfg = s[id] || { status: 'tersedia', catatan: '' };
+        const sel  = document.getElementById('pm-sel-' + id);
+        const lbl  = document.getElementById('pm-lbl-' + id);
+        const note = document.getElementById('pm-note-' + id);
+        if (sel)  sel.value = cfg.status || 'tersedia';
+        if (note) note.value = cfg.catatan || '';
+        if (lbl)  {
+          const st = cfg.status || 'tersedia';
+          lbl.className = 'pm-status-label pm-lbl-' + st;
+          lbl.textContent = st === 'tersedia' ? '✅ Tersedia' : st === 'habis' ? '❌ Stok Habis' : '⚙ Maintenance';
+        }
+      });
+    }, { onlyOnce: true });
+  }
+
+  window.updateProdukStatus = async function(id) {
+    const sel   = document.getElementById('pm-sel-' + id);
+    const note  = document.getElementById('pm-note-' + id);
+    const lbl   = document.getElementById('pm-lbl-' + id);
+    if (!sel) return;
+    const st = sel.value;
+    try {
+      await update(ref(db, 'produk_status/' + id), {
+        status:  st,
+        catatan: note ? note.value.trim() : ''
+      });
+      if (lbl) {
+        lbl.className = 'pm-status-label pm-lbl-' + st;
+        lbl.textContent = st === 'tersedia' ? '✅ Tersedia' : st === 'habis' ? '❌ Stok Habis' : '⚙ Maintenance';
+      }
+      showToast('✅ Status ' + id + ' diperbarui');
+    } catch(err) {
+      console.error(err);
+      showToast('⚠️ Gagal menyimpan.');
+    }
+  };
+
+  /* ══ AUTH ══ */
+  window.doLogin = function() {
+    const v = document.getElementById('loginPass').value;
+    if (v === PASS) {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('mainPanel').style.display   = 'block';
+      startListener();
+    } else {
+      document.getElementById('loginErr').style.display = 'block';
+      document.getElementById('loginPass').value = '';
+    }
+  };
+  window.doLogout = function() {
+    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    allData = [];
+    document.getElementById('mainPanel').style.display   = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('loginPass').value = '';
+    document.getElementById('loginErr').style.display = 'none';
+  };
+  document.getElementById('loginPass').addEventListener('keydown', e => {
+    if (e.key === 'Enter') window.doLogin();
+  });
+
+  /* ══ REALTIME LISTENER ══ */
+  function startListener() {
+    const laporanRef = ref(db, 'laporan');
+    // onValue returns an unsubscribe function
+    unsubscribe = onValue(laporanRef, snapshot => {
+      allData = [];
+      if (snapshot.exists()) {
+        snapshot.forEach(child => {
+          allData.push({ fbKey: child.key, ...child.val() });
+        });
+        // Sort newest first by timestamp
+        allData.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      }
+      renderTable();
+      updateStats();
+    }, err => {
+      console.error('Firebase read error:', err);
+      showToast('⚠️ Gagal memuat data. Periksa koneksi.');
+    });
+  }
+
+  /* ══ STATS ══ */
+  function updateStats() {
+    document.getElementById('statTotal').textContent   = allData.length;
+    document.getElementById('statBaru').textContent    = allData.filter(x => !x.status || x.status === 'Baru').length;
+    document.getElementById('statProses').textContent  = allData.filter(x => x.status === 'Diproses').length;
+    document.getElementById('statSelesai').textContent = allData.filter(x => x.status === 'Selesai').length;
+  }
+
+  /* ══ RENDER TABLE ══ */
+  window.renderTable = function() {
+    const q  = document.getElementById('searchInput').value.toLowerCase();
+    const fa = document.getElementById('filterAlasan').value;
+    const fs = document.getElementById('filterStatus').value;
+
+    const filtered = allData.filter(r => {
+      const matchQ = !q || (r.nama||'').toLowerCase().includes(q) || (r.kontak||'').toLowerCase().includes(q) || (r.alasan||'').toLowerCase().includes(q);
+      const matchA = !fa || r.alasan === fa;
+      const matchS = !fs || (r.status || 'Baru') === fs;
+      return matchQ && matchA && matchS;
+    });
+
+    const total = filtered.length;
+    const pages = Math.max(1, Math.ceil(total / PER_PAGE));
+    if (currentPage > pages) currentPage = pages;
+    const slice = filtered.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
+
+    const tbody = document.getElementById('tableBody');
+    const empty = document.getElementById('emptyState');
+
+    if (total === 0) {
+      tbody.innerHTML = '';
+      empty.classList.remove('hidden');
+    } else {
+      empty.classList.add('hidden');
+      tbody.innerHTML = slice.map((r, i) => {
+        const no      = (currentPage - 1) * PER_PAGE + i + 1;
+        const st      = r.status || 'Baru';
+        const stClass = st === 'Baru' ? 's-baru' : st === 'Diproses' ? 's-proses' : 's-selesai';
+        const alClass = alasanClass(r.alasan);
+        const det     = r.detail ? (r.detail.length > 40 ? r.detail.slice(0,40)+'…' : r.detail) : '<span style="color:var(--text3)">—</span>';
+        const key     = r.fbKey;
+        return `<tr>
+          <td style="color:var(--text3);font-size:12px">${no}</td>
+          <td class="td-name">${esc(r.nama)}</td>
+          <td class="td-kontak">${esc(r.kontak)}</td>
+          <td><span class="alasan-badge ${alClass}">${esc(r.alasan)}</span></td>
+          <td class="td-detail">${det}</td>
+          <td style="font-size:12px;color:var(--text3);white-space:nowrap">${esc(r.waktu)}</td>
+          <td><span class="status-badge ${stClass}">${st}</span></td>
+          <td style="white-space:nowrap">
+            <button class="action-btn" onclick="window.openDetail('${key}')">Detail</button>
+            <button class="action-btn action-del" onclick="window.deleteOne('${key}')">Hapus</button>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    // Pagination
+    const pg = document.getElementById('pagination');
+    pg.innerHTML = '';
+    if (pages > 1) {
+      if (currentPage > 1) pg.innerHTML += `<button class="pg-btn" onclick="window.goPage(${currentPage-1})">‹</button>`;
+      for (let p = 1; p <= pages; p++) {
+        pg.innerHTML += `<button class="pg-btn${p===currentPage?' active':''}" onclick="window.goPage(${p})">${p}</button>`;
+      }
+      if (currentPage < pages) pg.innerHTML += `<button class="pg-btn" onclick="window.goPage(${currentPage+1})">›</button>`;
+    }
+  };
+
+  window.goPage = function(p) { currentPage = p; renderTable(); };
+
+  /* ══ DETAIL MODAL ══ */
+  window.openDetail = function(fbKey) {
+    const r = allData.find(x => x.fbKey === fbKey);
+    if (!r) return;
+    currentFbKey = fbKey;
+    document.getElementById('d-id').textContent     = fbKey;
+    document.getElementById('d-nama').textContent   = r.nama;
+    document.getElementById('d-kontak').textContent = r.kontak;
+    document.getElementById('d-alasan').textContent = r.alasan;
+    document.getElementById('d-detail').textContent = r.detail || '(tidak ada keterangan)';
+    document.getElementById('d-waktu').textContent  = r.waktu;
+    document.getElementById('d-status').value       = r.status || 'Baru';
+    document.getElementById('detailOverlay').classList.add('open');
+  };
+  window.closeDetail = function() {
+    document.getElementById('detailOverlay').classList.remove('open');
+    currentFbKey = null;
+  };
+  window.handleDetailOverlay = function(e) {
+    if (e.target === document.getElementById('detailOverlay')) window.closeDetail();
+  };
+  window.saveStatus = async function() {
+    if (!currentFbKey) return;
+    const newStatus = document.getElementById('d-status').value;
+    try {
+      await update(ref(db, 'laporan/' + currentFbKey), { status: newStatus });
+      window.closeDetail();
+      showToast('✅ Status berhasil diperbarui');
+    } catch(err) {
+      console.error(err);
+      showToast('⚠️ Gagal memperbarui status.');
+    }
+  };
+
+  /* ══ DELETE ══ */
+  window.deleteOne = async function(fbKey) {
+    if (!confirm('Hapus laporan ini?')) return;
+    try {
+      await remove(ref(db, 'laporan/' + fbKey));
+      showToast('🗑 Laporan dihapus');
+    } catch(err) {
+      console.error(err);
+      showToast('⚠️ Gagal menghapus laporan.');
+    }
+  };
+  window.clearAll = async function() {
+    if (!confirm('Hapus SEMUA laporan? Tindakan ini tidak bisa dibatalkan.')) return;
+    try {
+      await remove(ref(db, 'laporan'));
+      showToast('🗑 Semua laporan dihapus');
+    } catch(err) {
+      console.error(err);
+      showToast('⚠️ Gagal menghapus data.');
+    }
+  };
+
+  /* ══ HELPERS ══ */
+  function alasanClass(a) {
+    if (!a) return 'a-lainnya';
+    if (a.includes('Penipuan') || a.includes('berbahaya')) return 'a-penipuan';
+    if (a.includes('tidak sesuai')) return 'a-tidak-sesuai';
+    if (a.includes('hak cipta')) return 'a-hak-cipta';
+    return 'a-lainnya';
+  }
+  function esc(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function showToast(msg) {
+    const t = document.getElementById('adToast');
+    t.textContent = msg; t.style.display = 'block';
+    clearTimeout(t._t);
+    t._t = setTimeout(() => { t.style.display = 'none'; }, 2500);
+  }
+  window.showToast = showToast;
+</script>
+</body>
+</html>
