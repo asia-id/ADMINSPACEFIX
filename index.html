@@ -372,6 +372,7 @@
     <div class="login-icon">🔐</div>
     <div class="login-title">Admin Panel</div>
     <div class="login-sub">Masuk untuk melihat laporan masuk</div>
+    <input class="login-input" id="loginNama" type="text" placeholder="Nama admin kamu" style="margin-bottom:10px;" onkeydown="if(event.key==='Enter')doLogin()"/>
     <input class="login-input" id="loginPass" type="password" placeholder="Password admin" onkeydown="if(event.key==='Enter')doLogin()"/>
     <button class="login-btn" onclick="doLogin()">Masuk</button>
     <div class="login-err" id="loginErr">Password salah. Coba lagi.</div>
@@ -384,7 +385,7 @@
   <div class="topbar">
     <div class="top-logo">Space<span>Store</span> — Admin</div>
     <div class="top-right">
-      <span class="admin-chip">ADMIN</span>
+      <span class="admin-chip" id="adminNameChip">ADMIN</span>
       <span class="fb-status" id="fbStatus" style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px;">
         <span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;box-shadow:0 0 6px var(--green)"></span>Firebase Live
       </span>
@@ -643,7 +644,8 @@
   const PASS     = 'admin123';
   const PER_PAGE = 8;
   let currentPage  = 1;
-  let currentFbKey = null;   // Firebase key of selected record
+  let currentFbKey = null;
+  let adminName    = 'Admin';   // set at login
   let allData      = [];     // [{fbKey, ...fields}]
   let unsubscribe  = null;
 
@@ -700,12 +702,21 @@
 
   /* ══ AUTH ══ */
   window.doLogin = function() {
-    const v = document.getElementById('loginPass').value;
+    const nama = document.getElementById('loginNama').value.trim();
+    const v    = document.getElementById('loginPass').value;
+    if (!nama) {
+      document.getElementById('loginErr').textContent = 'Masukkan nama admin dulu.';
+      document.getElementById('loginErr').style.display = 'block';
+      return;
+    }
     if (v === PASS) {
+      adminName = nama;
+      document.getElementById('adminNameChip').textContent = nama;
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('mainPanel').style.display   = 'block';
       startListener();
     } else {
+      document.getElementById('loginErr').textContent = 'Password salah. Coba lagi.';
       document.getElementById('loginErr').style.display = 'block';
       document.getElementById('loginPass').value = '';
     }
@@ -713,8 +724,11 @@
   window.doLogout = function() {
     if (unsubscribe) { unsubscribe(); unsubscribe = null; }
     allData = [];
+    adminName = 'Admin';
+    document.getElementById('adminNameChip').textContent = 'ADMIN';
     document.getElementById('mainPanel').style.display   = 'none';
     document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('loginNama').value = '';
     document.getElementById('loginPass').value = '';
     document.getElementById('loginErr').style.display = 'none';
   };
@@ -829,7 +843,8 @@
     document.getElementById('d-balasan').value      = r.balasan || '';
     const meta = document.getElementById('d-balasan-meta');
     if (r.balasan && r.waktuBalasan) {
-      meta.innerHTML = '&#128338; Terakhir dibalas: ' + r.waktuBalasan;
+      const oleh = r.namaAdmin ? ' oleh <strong style="color:var(--text2)">' + r.namaAdmin + '</strong>' : '';
+      meta.innerHTML = '&#128338; Terakhir dibalas' + oleh + ': ' + r.waktuBalasan;
     } else {
       meta.textContent = r.balasan ? '' : 'Belum ada balasan.';
     }
@@ -849,6 +864,7 @@
     const updateData = { status: newStatus };
     if (balasanTxt) {
       updateData.balasan = balasanTxt;
+      updateData.namaAdmin = adminName;
       const now = new Date();
       updateData.waktuBalasan = now.toLocaleString('id-ID', {
         timeZone: 'Asia/Jakarta', day:'2-digit', month:'short',
