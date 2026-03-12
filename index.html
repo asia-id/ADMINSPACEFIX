@@ -362,6 +362,16 @@
       margin-right: 5px; vertical-align: middle;
       box-shadow: 0 0 5px rgba(212,168,83,0.5);
     }
+
+    .balasan-nama-input {
+      width: 100%; background: var(--bg3);
+      border: 1px solid var(--border2); border-radius: 9px;
+      color: var(--text); font-family: 'DM Sans', sans-serif;
+      font-size: 13px; padding: 9px 13px; outline: none;
+      transition: border-color .18s; margin-top: 4px;
+    }
+    .balasan-nama-input:focus { border-color: var(--gold); }
+    .balasan-nama-input::placeholder { color: var(--text3); }
   </style>
 </head>
 <body>
@@ -372,7 +382,6 @@
     <div class="login-icon">🔐</div>
     <div class="login-title">Admin Panel</div>
     <div class="login-sub">Masuk untuk melihat laporan masuk</div>
-    <input class="login-input" id="loginNama" type="text" placeholder="Nama admin kamu" style="margin-bottom:10px;" onkeydown="if(event.key==='Enter')doLogin()"/>
     <input class="login-input" id="loginPass" type="password" placeholder="Password admin" onkeydown="if(event.key==='Enter')doLogin()"/>
     <button class="login-btn" onclick="doLogin()">Masuk</button>
     <div class="login-err" id="loginErr">Password salah. Coba lagi.</div>
@@ -613,8 +622,9 @@
       </select>
     </div>
     <div class="d-row d-balasan-row">
-      <div class="d-lbl">💬 Balasan Admin</div>
-      <textarea class="balasan-input" id="d-balasan" rows="3" placeholder="Tulis balasan untuk pengguna... (akan tampil di halaman Cek Laporan)"></textarea>
+      <div class="d-lbl">💬 Balasan CS</div>
+      <input class="balasan-nama-input" id="d-nama-cs" type="text" placeholder="Nama CS yang membalas (wajib diisi)"/>
+      <textarea class="balasan-input" id="d-balasan" rows="3" placeholder="Tulis balasan untuk pengguna... (akan tampil di halaman Cek Laporan)" style="margin-top:8px;"></textarea>
     </div>
     <div class="d-balasan-meta" id="d-balasan-meta"></div>
     <button class="save-status-btn" onclick="saveStatus()">💾 Simpan &amp; Kirim Balasan</button>
@@ -702,16 +712,8 @@
 
   /* ══ AUTH ══ */
   window.doLogin = function() {
-    const nama = document.getElementById('loginNama').value.trim();
-    const v    = document.getElementById('loginPass').value;
-    if (!nama) {
-      document.getElementById('loginErr').textContent = 'Masukkan nama admin dulu.';
-      document.getElementById('loginErr').style.display = 'block';
-      return;
-    }
+    const v = document.getElementById('loginPass').value;
     if (v === PASS) {
-      adminName = nama;
-      document.getElementById('adminNameChip').textContent = nama;
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('mainPanel').style.display   = 'block';
       startListener();
@@ -728,7 +730,6 @@
     document.getElementById('adminNameChip').textContent = 'ADMIN';
     document.getElementById('mainPanel').style.display   = 'none';
     document.getElementById('loginScreen').style.display = 'flex';
-    document.getElementById('loginNama').value = '';
     document.getElementById('loginPass').value = '';
     document.getElementById('loginErr').style.display = 'none';
   };
@@ -840,10 +841,12 @@
     document.getElementById('d-detail').textContent = r.detail || '(tidak ada keterangan)';
     document.getElementById('d-waktu').textContent  = r.waktu;
     document.getElementById('d-status').value       = r.status || 'Baru';
+    document.getElementById('d-nama-cs').value      = '';
     document.getElementById('d-balasan').value      = r.balasan || '';
     const meta = document.getElementById('d-balasan-meta');
     if (r.balasan && r.waktuBalasan) {
       const oleh = r.namaAdmin ? ' oleh <strong style="color:var(--text2)">' + r.namaAdmin + '</strong>' : '';
+      document.getElementById('d-nama-cs').value = r.namaAdmin || '';
       meta.innerHTML = '&#128338; Terakhir dibalas' + oleh + ': ' + r.waktuBalasan;
     } else {
       meta.textContent = r.balasan ? '' : 'Belum ada balasan.';
@@ -864,7 +867,9 @@
     const updateData = { status: newStatus };
     if (balasanTxt) {
       updateData.balasan = balasanTxt;
-      updateData.namaAdmin = adminName;
+      const namaCS = document.getElementById('d-nama-cs').value.trim();
+      if (!namaCS) { showToast('⚠️ Isi nama CS dulu sebelum mengirim balasan.'); return; }
+      updateData.namaAdmin = namaCS;
       const now = new Date();
       updateData.waktuBalasan = now.toLocaleString('id-ID', {
         timeZone: 'Asia/Jakarta', day:'2-digit', month:'short',
